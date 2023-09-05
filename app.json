@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "pgcd4",
-    "slug": "pgcd4",
+    "name": "pgcd",
+    "slug": "pgcd",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,13 +15,21 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyDuGDb23nJ594DwlADWA4tRDuU-SZTl5v4"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.ksoftlabs.pgcd",
+      "config": {
+        "googleMaps": { "apiKey": "AIzaSyDuGDb23nJ594DwlADWA4tRDuU-SZTl5v4" }
+     },
+      "permissions":["ACCESS_COARSE_LOCATION","ACCESS_FINE_LOCATION"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
