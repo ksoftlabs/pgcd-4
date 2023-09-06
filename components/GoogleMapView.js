@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import { StyleSheet, View, PermissionsAndroid, TouchableOpacity, Text } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
@@ -12,6 +12,8 @@ const GoogleMapView = () => {
     longitudeDelta: 0.0421,
   });
   const [distance, setDistance] = useState(null);
+  const mapViewRef = useRef(null);
+  const markerRef = useRef(null);
 
   useEffect(() => {
     async function requestLocationPermission() {
@@ -83,22 +85,26 @@ const GoogleMapView = () => {
     }
   };
 
-  useEffect(() => {
-    if (currentLocation) {
-      const calculatedDistance = calculateDistance(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        7.512186508343344, // President's Girls College latitude
-        80.33438155743264 // President's Girls College longitude
-      );
+  const updateDistanceAndCircle = (newLocation) => {
+    const calculatedDistance = calculateDistance(
+      newLocation.latitude,
+      newLocation.longitude,
+      7.512186508343344, // President's Girls College latitude
+      80.33438155743264 // President's Girls College longitude
+    );
 
-      if (calculatedDistance !== null) {
-        setDistance(calculatedDistance);
-      } else {
-        setDistance(null);
-      }
+    if (calculatedDistance !== null) {
+      setDistance(calculatedDistance);
+    } else {
+      setDistance(null);
     }
-  }, [currentLocation]);
+  };
+
+  const handleMarkerDragEnd = (e) => {
+    const newLocation = e.nativeEvent.coordinate;
+    setCurrentLocation(newLocation);
+    updateDistanceAndCircle(newLocation);
+  };
 
   return (
     <View style={styles.container}>
@@ -107,16 +113,17 @@ const GoogleMapView = () => {
         provider={PROVIDER_GOOGLE}
         region={region}
         onRegionChange={(newRegion) => setRegion(newRegion)}
+        ref={mapViewRef}
       >
         {currentLocation && (
           <>
             <Marker
-              coordinate={{
-                latitude: currentLocation.latitude,
-                longitude: currentLocation.longitude,
-              }}
+              coordinate={currentLocation}
               title="My Location"
               description="This is my current location"
+              draggable
+              onDragEnd={handleMarkerDragEnd}
+              ref={markerRef}
             />
             <Marker
               coordinate={{
