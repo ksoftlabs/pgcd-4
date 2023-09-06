@@ -1,24 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import MapView, { Marker,PROVIDER_GOOGLE } from 'react-native-maps';
-import { StyleSheet, View, PermissionsAndroid } from 'react-native';
-import Geolocation from 'react-native-geolocation-service'; // Import Geolocation
+import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
+import { StyleSheet, View, PermissionsAndroid, TouchableOpacity, Text } from 'react-native';
+import Geolocation from 'react-native-geolocation-service';
 
 const GoogleMapView = () => {
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [region, setRegion] = useState({
+    latitude: 7.512186508343344,
+    longitude: 80.33438155743264,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+  const [distance, setDistance] = useState(null);
 
   useEffect(() => {
-    // Request permission to access location (for Android)
     async function requestLocationPermission() {
       try {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
         );
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          // Permission granted, get current location
           Geolocation.getCurrentPosition(
             (position) => {
               const { latitude, longitude } = position.coords;
               setCurrentLocation({ latitude, longitude });
+              setRegion({
+                ...region,
+                latitude,
+                longitude,
+              });
             },
             (error) => {
               console.error(error);
@@ -33,41 +43,119 @@ const GoogleMapView = () => {
       }
     }
 
-    // Call the permission request function
     requestLocationPermission();
   }, []);
+
+  const handleZoomIn = () => {
+    setRegion({
+      ...region,
+      latitudeDelta: region.latitudeDelta / 2,
+      longitudeDelta: region.longitudeDelta / 2,
+    });
+  };
+
+  const handleZoomOut = () => {
+    setRegion({
+      ...region,
+      latitudeDelta: region.latitudeDelta * 2,
+      longitudeDelta: region.longitudeDelta * 2,
+    });
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (lat1 && lon1 && lat2 && lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+          Math.cos(lat2 * (Math.PI / 180)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
+    } else {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (currentLocation) {
+      const calculatedDistance = calculateDistance(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        7.512186508343344, // President's Girls College latitude
+        80.33438155743264 // President's Girls College longitude
+      );
+
+      if (calculatedDistance !== null) {
+        setDistance(calculatedDistance);
+      } else {
+        setDistance(null);
+      }
+    }
+  }, [currentLocation]);
 
   return (
     <View style={styles.container}>
       <MapView
         style={styles.map}
         provider={PROVIDER_GOOGLE}
-        initialRegion={{
-          latitude: 7.512186508343344, // Replace with your desired initial latitude
-          longitude: 80.33438155743264, // Replace with your desired initial longitude
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
+        region={region}
+        onRegionChange={(newRegion) => setRegion(newRegion)}
       >
         {currentLocation && (
-          <Marker
-            coordinate={{
-              latitude: currentLocation.latitude,
-              longitude: currentLocation.longitude,
-            }}
-            title="My Location"
-            description="This is my current location"
-          />
+          <>
+            <Marker
+              coordinate={{
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
+              }}
+              title="My Location"
+              description="This is my current location"
+            />
+            <Marker
+              coordinate={{
+                latitude: 7.512186508343344, // President's Girls College latitude
+                longitude: 80.33438155743264, // President's Girls College longitude
+              }}
+              title="President's Girls College"
+              description="Location of the President's Girls College"
+            />
+            {distance !== null && (
+              <Circle
+                center={{
+                  latitude: 7.512186508343344, // President's Girls College latitude
+                  longitude: 80.33438155743264, // President's Girls College longitude
+                }}
+                radius={distance * 1000} // Convert to meters
+                strokeColor="rgba(0, 0, 255, 0.5)"
+                fillColor="rgba(0, 0, 255, 0.2)"
+              />
+            )}
+          </>
         )}
-        <Marker
-            coordinate={{
-              latitude: 7.512186508343344,
-              longitude: 80.33438155743264,
-            }}
-            title="President's Girls College"
-            description="Location of the President's Girls College"
-          />
       </MapView>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={handleZoomIn}>
+          <Text>Zoom In</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleZoomOut}>
+          <Text>Zoom Out</Text>
+        </TouchableOpacity>
+      </View>
+
+      {distance !== null && (
+        <View style={styles.distanceContainer}>
+          <Text>Distance to President's Girls College:</Text>
+          <Text>{distance.toFixed(5)} km</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -78,6 +166,29 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  button: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 5,
+  },
+  distanceContainer: {
+    position: 'absolute',
+    bottom: 70,
+    left: 16,
+    backgroundColor: 'white',
+    padding: 8,
+    borderRadius: 5,
   },
 });
 
