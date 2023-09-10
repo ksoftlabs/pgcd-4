@@ -12,6 +12,7 @@ const GoogleMapView = () => {
     longitudeDelta: 0.0421,
   });
   const [distance, setDistance] = useState(null);
+  const [mapType, setMapType] = useState('standard'); // Initialize with standard map type
   const mapViewRef = useRef(null);
   const markerRef = useRef(null);
 
@@ -106,6 +107,15 @@ const GoogleMapView = () => {
     updateDistanceAndCircle(newLocation);
   };
 
+  const toggleMapType = () => {
+    // Toggle between standard and hybrid map types
+    if (mapType === 'standard') {
+      setMapType('hybrid');
+    } else {
+      setMapType('standard');
+    }
+  };
+
   // Call the updateDistanceAndCircle function when the component mounts
   useEffect(() => {
     if (currentLocation) {
@@ -122,6 +132,8 @@ const GoogleMapView = () => {
         region={region}
         onRegionChange={(newRegion) => setRegion(newRegion)}
         ref={mapViewRef}
+        showsUserLocation={true}
+        mapType={mapType} // Set the map type here
       >
         {currentLocation && (
           <>
@@ -162,6 +174,9 @@ const GoogleMapView = () => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={handleZoomOut}>
           <Text>Zoom Out</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={toggleMapType}>
+          <Text>Toggle Map Type</Text>
         </TouchableOpacity>
       </View>
 
