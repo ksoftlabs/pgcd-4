@@ -19,27 +19,31 @@ const GoogleMapView = () => {
   useEffect(() => {
     async function requestLocationPermission() {
       try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          Geolocation.getCurrentPosition(
-            (position) => {
-              const { latitude, longitude } = position.coords;
-              setCurrentLocation({ latitude, longitude });
-              setRegion({
-                ...region,
-                latitude,
-                longitude,
-              });
-            },
-            (error) => {
-              console.error(error);
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+        if (Geolocation && Geolocation.getCurrentPosition) {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
           );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            Geolocation.getCurrentPosition(
+              (position) => {
+                const { latitude, longitude } = position.coords;
+                setCurrentLocation({ latitude, longitude });
+                setRegion({
+                  ...region,
+                  latitude,
+                  longitude,
+                });
+              },
+              (error) => {
+                console.error(error);
+              },
+              { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+            );
+          } else {
+            console.warn('Location permission denied');
+          }
         } else {
-          console.warn('Location permission denied');
+          console.warn('Geolocation or getCurrentPosition is not available.');
         }
       } catch (err) {
         console.warn(err);
